@@ -671,6 +671,22 @@ class TestStartWithPortBindings(BaseTestCase):
         self.client.kill(id)
 
 
+class TestMacAddress(BaseTestCase):
+    def runTest(self):
+        mac_address_expected = "02:42:ac:11:00:0a"
+        container = self.client.create_container(
+            'busybox', ['sleep', '60'], mac_address=mac_address_expected)
+
+        id = container['Id']
+
+        self.client.start(container)
+        res = self.client.inspect_container(container['Id'])
+        self.assertEqual(mac_address_expected,
+                         res['NetworkSettings']['MacAddress'])
+
+        self.client.kill(id)
+
+
 class TestRestart(BaseTestCase):
     def runTest(self):
         container = self.client.create_container('busybox', ['sleep', '9999'])
@@ -917,8 +933,8 @@ class TestRestartingContainer(BaseTestCase):
         with self.assertRaises(docker.errors.APIError) as exc:
             self.client.remove_container(id)
         err = exc.exception.response.text
-        self.assertTrue(
-            err.startswith('You cannot remove a running container')
+        self.assertIn(
+            'You cannot remove a running container', err
         )
         self.client.remove_container(id, force=True)
 
