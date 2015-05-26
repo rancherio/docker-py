@@ -436,6 +436,9 @@ def create_host_config(
 
             host_config['ExtraHosts'] = extra_hosts
 
+        if isinstance(extra_hosts, list):
+            host_config['ExtraHosts'] = extra_hosts
+
     if links is not None:
         if isinstance(links, dict):
             links = six.iteritems(links)
