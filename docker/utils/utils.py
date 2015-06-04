@@ -119,13 +119,14 @@ def compare_version(v1, v2):
         return 1
 
 
-def ping_registry(url):
-    return ping(url + '/v2/') or ping(url + '/v1/_ping')
+def ping_registry(url, verify=None):
+    return ping(url + '/v2/', verify=verify) or ping(url + '/v1/_ping',
+                                                         verify=verify)
 
 
-def ping(url):
+def ping(url, verify=None):
     try:
-        res = requests.get(url, timeout=3)
+        res = requests.get(url, timeout=3, verify=verify)
     except Exception:
         return False
     else:
