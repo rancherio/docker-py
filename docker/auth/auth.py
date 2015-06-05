@@ -26,18 +26,11 @@ INDEX_URL = 'https://index.docker.io/v1/'
 DOCKER_CONFIG_FILENAME = '.dockercfg'
 
 
-def swap_protocol(url):
-    if url.startswith('http://'):
-        return url.replace('http://', 'https://', 1)
-    if url.startswith('https://'):
-        return url.replace('https://', 'http://', 1)
-    return url
-
-
 def expand_registry_url(hostname, insecure=False):
+    verify = not insecure
     if hostname.startswith('http:') or hostname.startswith('https:'):
         return hostname
-    if utils.ping('https://' + hostname + '/v1/_ping'):
+    if utils.ping_registry('https://' + hostname, verify=verify):
         return 'https://' + hostname
     elif insecure:
         return 'http://' + hostname
@@ -68,29 +61,27 @@ def resolve_repository_name(repo_name, insecure=False):
 
 
 def resolve_authconfig(authconfig, registry=None):
-    """Return the authentication data from the given auth configuration for a
-    specific registry. We'll do our best to infer the correct URL for the
-    registry, trying both http and https schemes. Returns an empty dictionnary
-    if no data exists."""
+    """
+    Returns the authentication data from the given auth configuration for a
+    specific registry. As with the Docker client, legacy entries in the config
+    with full URLs are stripped down to hostnames before checking for a match.
+    Returns None if no match was found.
+    """
     # Default to the public index server
-    registry = registry or INDEX_URL
-
-    # Ff its not the index server there are three cases:
-    #
-    # 1. this is a full config url -> it should be used as is
-    # 2. it could be a full url, but with the wrong protocol
-    # 3. it can be the hostname optionally with a port
-    #
-    # as there is only one auth entry which is fully qualified we need to start
-    # parsing and matching
-    if '/' not in registry:
-        registry = registry + '/v1/'
-    if not registry.startswith('http:') and not registry.startswith('https:'):
-        registry = 'https://' + registry
+    registry = convert_to_hostname(registry) if registry else INDEX_URL
 
     if registry in authconfig:
         return authconfig[registry]
-    return authconfig.get(swap_protocol(registry), None)
+
+    for key, config in six.iteritems(authconfig):
+        if convert_to_hostname(key) == registry:
+            return config
+
+    return None
+
+
+def convert_to_hostname(url):
+    return url.replace('http://', '').replace('https://', '').split('/', 1)[0]
 
 
 def encode_auth(auth_info):
@@ -102,7 +93,7 @@ def decode_auth(auth):
     if isinstance(auth, six.string_types):
         auth = auth.encode('ascii')
     s = base64.b64decode(auth)
-    login, pwd = s.split(b':')
+    login, pwd = s.split(b':', 1)
     return login.decode('ascii'), pwd.decode('ascii')
 
 

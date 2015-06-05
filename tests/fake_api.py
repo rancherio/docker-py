@@ -12,10 +12,13 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-CURRENT_VERSION = 'v1.16'
+import fake_stat
+
+CURRENT_VERSION = 'v1.18'
 
 FAKE_CONTAINER_ID = '3cc2351ab11b'
 FAKE_IMAGE_ID = 'e9aa60c60128'
+FAKE_EXEC_ID = 'd5d177f121dc'
 FAKE_IMAGE_NAME = 'test_image'
 FAKE_TARBALL_PATH = '/path/to/tarball'
 FAKE_REPO_NAME = 'repo'
@@ -26,6 +29,17 @@ FAKE_PATH = '/path'
 
 # Each method is prefixed with HTTP method (get, post...)
 # for clarity and readability
+
+
+def get_fake_raw_version():
+    status_code = 200
+    response = {
+        "ApiVersion": "1.18",
+        "GitCommit": "fake-commit",
+        "GoVersion": "go1.3.3",
+        "Version": "1.5.0"
+    }
+    return status_code, response
 
 
 def get_fake_version():
@@ -129,6 +143,7 @@ def get_fake_inspect_container():
             "StartedAt": "2013-09-25T14:01:18.869545111+02:00",
             "Ghost": False
         },
+        "MacAddress": "02:42:ac:11:00:0a"
     }
     return status_code, response
 
@@ -188,7 +203,8 @@ def get_fake_port():
             'Ports': {
                 '1111': None,
                 '1111/tcp': [{'HostIp': '127.0.0.1', 'HostPort': '4567'}],
-                '2222': None}
+                '2222': None},
+            'MacAddress': '02:42:ac:11:00:0a'
         }
     }
     return status_code, response
@@ -219,24 +235,55 @@ def get_fake_diff():
     return status_code, response
 
 
+def get_fake_events():
+    status_code = 200
+    response = [{'status': 'stop', 'id': FAKE_CONTAINER_ID,
+                 'from': FAKE_IMAGE_ID, 'time': 1423247867}]
+    return status_code, response
+
+
 def get_fake_export():
     status_code = 200
     response = 'Byte Stream....'
     return status_code, response
 
 
-def post_fake_execute():
+def post_fake_exec_create():
     status_code = 200
-    response = {'Id': FAKE_CONTAINER_ID}
+    response = {'Id': FAKE_EXEC_ID}
     return status_code, response
 
 
-def post_fake_execute_start():
+def post_fake_exec_start():
     status_code = 200
     response = (b'\x01\x00\x00\x00\x00\x00\x00\x11bin\nboot\ndev\netc\n'
                 b'\x01\x00\x00\x00\x00\x00\x00\x12lib\nmnt\nproc\nroot\n'
                 b'\x01\x00\x00\x00\x00\x00\x00\x0csbin\nusr\nvar\n')
     return status_code, response
+
+
+def post_fake_exec_resize():
+    status_code = 201
+    return status_code, ''
+
+
+def get_fake_exec_inspect():
+    return 200, {
+        'OpenStderr': True,
+        'OpenStdout': True,
+        'Container': get_fake_inspect_container()[1],
+        'Running': False,
+        'ProcessConfig': {
+            'arguments': ['hello world'],
+            'tty': False,
+            'entrypoint': 'echo',
+            'privileged': False,
+            'user': ''
+        },
+        'ExitCode': 0,
+        'ID': FAKE_EXEC_ID,
+        'OpenStdin': False
+    }
 
 
 def post_fake_stop_container():
@@ -267,6 +314,11 @@ def post_fake_restart_container():
     status_code = 200
     response = {'Id': FAKE_CONTAINER_ID}
     return status_code, response
+
+
+def post_fake_rename_container():
+    status_code = 204
+    return status_code, None
 
 
 def delete_fake_remove_container():
@@ -323,9 +375,16 @@ def post_fake_tag_image():
     return status_code, response
 
 
+def get_fake_stats():
+    status_code = 200
+    response = fake_stat.OBJ
+    return status_code, response
+
 # Maps real api url to fake response callback
-prefix = 'http+unix://var/run/docker.sock'
+prefix = 'http+docker://localunixsocket'
 fake_responses = {
+    '{0}/version'.format(prefix):
+    get_fake_raw_version,
     '{1}/{0}/version'.format(CURRENT_VERSION, prefix):
     get_fake_version,
     '{1}/{0}/info'.format(CURRENT_VERSION, prefix):
@@ -346,6 +405,8 @@ fake_responses = {
     post_fake_resize_container,
     '{1}/{0}/containers/3cc2351ab11b/json'.format(CURRENT_VERSION, prefix):
     get_fake_inspect_container,
+    '{1}/{0}/containers/3cc2351ab11b/rename'.format(CURRENT_VERSION, prefix):
+    post_fake_rename_container,
     '{1}/{0}/images/e9aa60c60128/tag'.format(CURRENT_VERSION, prefix):
     post_fake_tag_image,
     '{1}/{0}/containers/3cc2351ab11b/wait'.format(CURRENT_VERSION, prefix):
@@ -357,9 +418,16 @@ fake_responses = {
     '{1}/{0}/containers/3cc2351ab11b/export'.format(CURRENT_VERSION, prefix):
     get_fake_export,
     '{1}/{0}/containers/3cc2351ab11b/exec'.format(CURRENT_VERSION, prefix):
-    post_fake_execute,
-    '{1}/{0}/exec/3cc2351ab11b/start'.format(CURRENT_VERSION, prefix):
-    post_fake_execute_start,
+    post_fake_exec_create,
+    '{1}/{0}/exec/d5d177f121dc/start'.format(CURRENT_VERSION, prefix):
+    post_fake_exec_start,
+    '{1}/{0}/exec/d5d177f121dc/json'.format(CURRENT_VERSION, prefix):
+    get_fake_exec_inspect,
+    '{1}/{0}/exec/d5d177f121dc/resize'.format(CURRENT_VERSION, prefix):
+    post_fake_exec_resize,
+
+    '{1}/{0}/containers/3cc2351ab11b/stats'.format(CURRENT_VERSION, prefix):
+    get_fake_stats,
     '{1}/{0}/containers/3cc2351ab11b/stop'.format(CURRENT_VERSION, prefix):
     post_fake_stop_container,
     '{1}/{0}/containers/3cc2351ab11b/kill'.format(CURRENT_VERSION, prefix):
@@ -393,5 +461,7 @@ fake_responses = {
     '{1}/{0}/containers/create'.format(CURRENT_VERSION, prefix):
     post_fake_create_container,
     '{1}/{0}/build'.format(CURRENT_VERSION, prefix):
-    post_fake_build_container
+    post_fake_build_container,
+    '{1}/{0}/events'.format(CURRENT_VERSION, prefix):
+    get_fake_events
 }

@@ -7,7 +7,7 @@ ROOT_DIR = os.path.dirname(__file__)
 SOURCE_DIR = os.path.join(ROOT_DIR)
 
 requirements = [
-    'requests >= 2.2.1, < 2.5.0',
+    'requests >= 2.5.2',
     'six >= 1.3.0',
 ]
 
@@ -24,8 +24,11 @@ setup(
     name="docker-py",
     version=version,
     description="Python client for Docker.",
-    packages=['docker', 'docker.auth', 'docker.unixconn', 'docker.utils',
-              'docker.ssladapter'],
+    url='https://github.com/docker/docker-py/',
+    packages=[
+        'docker', 'docker.auth', 'docker.unixconn', 'docker.utils',
+        'docker.utils.ports', 'docker.ssladapter'
+    ],
     install_requires=requirements,
     tests_require=test_requirements,
     zip_safe=False,

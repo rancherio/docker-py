@@ -1,6 +1,150 @@
 Change Log
 ==========
 
+1.2.2
+-----
+
+### Bugfixes
+
+* Fixed a bug where parameters passed to `Client.exec_resize` would be ignored (#576)
+* Fixed a bug where auth config wouldn't be resolved properly in `Client.pull` (#577)
+
+1.2.1
+-----
+
+### Bugfixes
+
+* Fixed a bug where the check_resource decorator would break with some
+  argument-passing methods. (#573)
+
+1.2.0
+-----
+
+[List of PRs / issues for this release](https://github.com/docker/docker-py/issues?q=milestone%3A1.2.0+is%3Aclosed)
+
+### Deprecation warning
+
+* `Client.execute` is being deprecated in favor of the more dev-friendly
+  `Client.exec_start` and `Client.exec_create`. **It will be removed in 1.3.0**
+
+### Features
+
+* Added `exec_create`, `exec_start`, `exec_inspect` and `exec_resize` to
+  client, accurately mirroring the
+  [Exec API](https://docs.docker.com/reference/api/docker_remote_api_v1.18/#exec-create)
+* Added `auth_config` param to `Client.pull` (allows to use one-off credentials
+  for this pull request)
+* Added support for `ipc_mode` in host config.
+* Added support for the `log_config` param in host config.
+* Added support for the `ulimit` param in host config.
+* Added support for container resource limits in `Client.build`.
+* When a resource identifier (image or container ID) is passed to a Client
+  method, we now check for `None` values to avoid crashing
+  (now raises `docker.errors.NullResource`)
+* Added tools to parse port ranges inside the new `docker.utils.ports` package.
+* Added a `version_info` attribute to the `docker` package.
+
+### Bugfixes
+
+* Fixed a bug in `Client.port` where absence of a certain key in the
+  container's JSON would raise an error (now just returns `None`)
+* Fixed a bug with the `trunc` parameter in `Client.containers` having no
+  effect (moved functionality to the client)
+* Several improvements have been made to the `Client.import_image` method.
+* Fixed pushing / pulling to
+  [v2 registries](https://github.com/docker/distribution)
+* Fixed a bug where passing a container dictionary to `Client.commit`
+  would fail
+
+### Miscellaneous
+
+* Default API version has been bumped to 1.18 (Docker Engine 1.6.0)
+* Several testing coverage improvements
+* Docs fixes and improvements
+
+1.1.0
+-----
+
+### Features
+
+* Added `dockerfile` param support to `Client.build` (mirrors
+  `docker build -f` behavior)
+* Added the ability to specify `'auto'` as `version` in `Client.__init__`,
+  allowing the constructor to autodetect the daemon's API version.
+
+### Bugfixes
+
+* Fixed a bug where decoding a result stream using the `decode` parameter
+  would break when using Python 3.x
+* Fixed a bug where some files in `.dockerignore` weren't being handled
+  properly
+* Fixed `resolve_authconfig` issues by bringing it closer to Docker Engine's
+  behavior. This should fix all issues encountered with private registry auth
+* Fixed an issue where passwords containing a colon weren't being handled
+  properly.
+* Bumped `requests` version requirement, which should fix most of the SSL
+  issues encountered recently.
+
+### Miscellaneous
+
+* Several integration test improvements.
+* Fixed some unclosed resources in unit tests.
+* Several docs improvements.
+
+1.0.0
+-----
+
+### Features
+
+* Added new `Client.rename` method (`docker rename`)
+* Added now `Client.stats` method (`docker stats`)
+* Added `read_only` param support to `utils.create_host_config` and
+  `Client.start` (`docker run --read-only`)
+* Added `pid_mode` param support to `utils.create_host_config` and
+  `Client.start` (`docker run --pid='host'`)
+* Added `since`, `until` and `filters` params to `Client.events`.
+* Added `decode` parameter to `Client.stats` and `Client.events` to decode
+  JSON objects on the fly (False by default).
+
+### Bugfixes
+
+* Fixed a bug that caused `Client.build` to crash when the provided source was
+  a remote source.
+
+### Miscellaneous
+
+* Default API version has been bumped to 1.17 (Docker Engine 1.5.0)
+* `Client.timeout` is now a public attribute, and users are encouraged to use it
+  when request timeouts need to be changed at runtime.
+* Added `Client.api_version` as a read-only property.
+* The `memswap_limit` argument in `Client.create_container` now accepts string
+  type values similar to `mem_limit` ('6g', '120000k', etc.)
+* Improved documentation
+
+0.7.2
+-----
+
+### Features
+
+* Added support for `mac_address` in `Client.create_container`
+
+### Bugfixes
+
+* Fixed a bug where streaming responses (`pull`, `push`, `logs`, etc.) were
+  unreliable (#300)
+* Fixed a bug where resolve_authconfig wouldn't properly resolve configuration
+  for private repositories (#468)
+* Fixed a bug where some errors wouldn't be properly constructed in
+  `client.py`, leading to unhelpful exceptions bubbling up (#466)
+* Fixed a bug where `Client.build` would try to close context when externally
+  provided (`custom_context == True`) (#458)
+* Fixed an issue in `create_host_config` where empty sequences wouldn't be
+  interpreted properly (#462)
+
+### Miscellaneous
+
+* Added `resolve_authconfig` tests.
+
 0.7.1
 -----
 

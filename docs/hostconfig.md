@@ -1,6 +1,8 @@
 # HostConfig object
 
-The Docker Remote API introduced [support for HostConfig in version 1.15](http://docs.docker.com/reference/api/docker_remote_api_v1.15/#create-a-container). This object contains all the parameters you can pass to `Client.start`.
+The Docker Remote API introduced [support for HostConfig in version 1.15](http://docs.docker.com/reference/api/docker_remote_api_v1.15/#create-a-container). This object contains all the parameters you could previously pass to `Client.start`.
+*It is highly recommended that users pass the HostConfig in the `host_config`*
+*param of `Client.create_container` instead of `Client.start`*
 
 ## HostConfig helper
 
@@ -64,7 +66,6 @@ for example:
 
 **Params**
 
-* container (str): The container to start
 * binds: Volumes to bind. See [Using volumes](volumes.md) for more information.
 * port_bindings (dict): Port bindings. See [Port bindings](port-bindings.md)
   for more information.
@@ -82,6 +83,14 @@ for example:
 * cap_add (list of str): Add kernel capabilities
 * cap_drop (list of str): Drop kernel capabilities
 * extra_hosts (dict): custom host-to-IP mappings (host:ip)
+* read_only (bool): mount the container's root filesystem as read only
+* pid_mode (str): if set to "host", use the host PID namespace inside the
+  container
+* security_opt (list): A list of string values to customize labels for MLS
+  systems, such as SELinux.
+* ulimits (list): A list of dicts or `docker.utils.Ulimit` objects. A list
+  of ulimits to be set in the container.
+* log_config (`docker.utils.LogConfig` or dict): Logging configuration to container
 
 **Returns** (dict) HostConfig dictionary
 
